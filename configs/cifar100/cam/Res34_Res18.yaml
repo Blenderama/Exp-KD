@@ -1,0 +1,23 @@
+EXPERIMENT:
+  NAME: ""
+  TAG: "cam,res34,res18"
+  PROJECT: "cifar100_baselines"
+DISTILLER:
+  TYPE: "CAM"
+  TEACHER: "ResNet34"
+  STUDENT: "ResNet18"
+SOLVER:
+  BATCH_SIZE: 64
+  EPOCHS: 240
+  LR: 0.05
+  LR_DECAY_STAGES: [150, 180, 210]
+  LR_DECAY_RATE: 0.1
+  WEIGHT_DECAY: 0.0005
+  MOMENTUM: 0.9
+  TYPE: "SGD"
+CAM:
+  LOSS:
+    FEAT_WEIGHT: 2000.
+  T: 2.
+#     FEAT_WEIGHT: 1.
+#     T: 1.
