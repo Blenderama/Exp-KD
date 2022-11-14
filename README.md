@@ -1,10 +1,10 @@
-Our code is based on mdistiller for knowledge distillation, and Transformer-Explainability for explainability tests. Please install mdistiller refer to https://github.com/megvii-research/mdistiller.git, and Transformer-Explainability 
+Our code is based on mdistiller for knowledge distillation (https://github.com/megvii-research/mdistiller.git), and Transformer-Explainability for explainability tests (https://github.com/hila-chefer/Transformer-Explainability.git).
 
 # Explainability-based Knowledge Distillation
 
 ### Framework & Performance
 
-<div style="text-align:center"><img src=".github/arch.jpg" width="80%" ></div>
+<div style="text-align:center"><img src="arch.jpg" width="80%" ></div>
 
 ### Main Benchmark Results
 
