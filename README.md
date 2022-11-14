@@ -2,7 +2,7 @@ Our code is based on mdistiller for knowledge distillation (https://github.com/m
 
 # Explainability-based Knowledge Distillation
 
-### Framework & Performance
+### Framework
 
 <div style="text-align:center"><img src="arch.jpg" width="80%" ></div>
 
@@ -21,7 +21,7 @@ On CIFAR-100:
 | Teacher <br> Student |ResNet32x4 <br> ShuffleNet-V1|WRN-40-2 <br> ShuffleNet-V1| VGG13 <br> MobileNet-V2| ResNet50 <br> MobileNet-V2| ResNet32x4 <br> MobileNet-V2|
 |:---------------:|:-----------------:|:-----------------:|:-----------------:|:------------------:|:------------------:|
 | KD | 74.07 | 74.83 | 67.37 | 67.35 | 74.45 |
-| **DKD** | **78.20** | **77.75** | **70.63** | **71.74** | **78.98** |
+| **Exp-KD** | **78.20** | **77.75** | **70.63** | **71.74** | **78.98** |
     
 
 On ImageNet:
@@ -29,7 +29,7 @@ On ImageNet:
 | Teacher <br> Student |ResNet34 <br> ResNet18|ResNet50 <br> MobileNet-V1|
 |:---------------:|:-----------------:|:-----------------:|
 | KD | 71.03 | 70.50 | 
-| **DKD** | **71.74** | **72.43** |
+| **Exp-KD** | **71.74** | **72.43** |
 
 # Exp-KD
 
@@ -68,9 +68,8 @@ sudo python3 setup.py develop
   python3 tools/eval.py -m ResNet34 -d imagenet # ResNet34 on imagenet
   
   # evaluate students
-  python3 tools/eval.p -m resnet8x4 -c download_ckpts/dkd_resnet8x4 # dkd-resnet8x4 on cifar100
-  python3 tools/eval.p -m MobileNetV1 -c download_ckpts/imgnet_dkd_mv1 -d imagenet # dkd-mv1 on imagenet
-  python3 tools/eval.p -m model_name -c output/your_exp/student_best # your checkpoints
+
+  python3 tools/eval.py -m model_name -c output/your_exp/student_best # your checkpoints
   ```
 
 
@@ -79,11 +78,11 @@ sudo python3 setup.py develop
 - Download the `cifar_teachers.tar` at <https://github.com/megvii-research/mdistiller/releases/tag/checkpoints> and untar it to `./download_ckpts` via `tar xvf cifar_teachers.tar`.
 
   ```bash
-  # for instance, our DKD method.
-  python3 tools/train.py --cfg configs/cifar100/dkd/res32x4_res8x4.yaml
+  # for instance, our Exp-KD method.
+  python3 tools/train.py --cfg configs/cifar100/cam/res32x4_res8x4.yaml
 
   # you can also change settings at command line
-  python3 tools/train.py --cfg configs/cifar100/dkd/res32x4_res8x4.yaml SOLVER.BATCH_SIZE 128 SOLVER.LR 0.1
+  python3 tools/train.py --cfg configs/cifar100/cam/res32x4_res8x4.yaml SOLVER.BATCH_SIZE 128 SOLVER.LR 0.1
   ```
 
 3. Training on ImageNet
@@ -91,7 +90,7 @@ sudo python3 setup.py develop
 - Download the dataset at <https://image-net.org/> and put them to `./data/imagenet`
 
   ```bash
-  # for instance, our DKD method.
+  # for instance, our Exp-KD method.
   python3 tools/train.py --cfg configs/imagenet/r34_r18/cam.yaml
   ```
 
