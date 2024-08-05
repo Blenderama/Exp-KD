@@ -1,3 +1,4 @@
+import imp
 import os
 import time
 from tqdm import tqdm
@@ -21,13 +22,14 @@ import pdb
 scaler = torch.cuda.amp.GradScaler()
 
 class BaseTrainer(object):
-    def __init__(self, experiment_name, distiller, train_loader, val_loader, cfg):
+    def __init__(self, experiment_name, distiller, train_loader, val_loader, cfg, _time=False):
         self.cfg = cfg
         self.distiller = distiller
         self.train_loader = train_loader
         self.val_loader = val_loader
         self.optimizer = self.init_optimizer(cfg)
         self.best_acc = -1
+        self._time = _time
 
         username = getpass.getuser()
         # init loggers
@@ -98,7 +100,10 @@ class BaseTrainer(object):
                 self.distiller.module.student = self.distiller.module.student.module
                 self.best_acc = 0
         while epoch < self.cfg.SOLVER.EPOCHS + 1:
-            self.train_epoch(epoch)
+            ret = self.train_epoch(epoch)
+            if ret == False:
+                return
+
             epoch += 1
         print(log_msg("Best accuracy:{}".format(self.best_acc), "EVAL"))
         with open(os.path.join(self.log_path, "worklog.txt"), "a") as writer:
@@ -118,17 +123,18 @@ class BaseTrainer(object):
 
         # train loops
         self.distiller.train()
-        try:
-            for idx, data in enumerate(self.train_loader):
-    #             if data[0].isnan().sum()>0 or data[0].isinf().sum()>0:
-    #                 self.train_loader.dataset.imgs
-                msg = self.train_iter(data, epoch, train_meters)
-                pbar.set_description(log_msg(msg, "TRAIN"))
-                pbar.update()
-        except UserWarning as msg:
-            print(msg)
-            pdb.set_trace()
+        if self._time:
+            import time
+            start = time.time()
+        for idx, data in enumerate(self.train_loader):
+            msg = self.train_iter(data, epoch, train_meters)
+            pbar.set_description(log_msg(msg, "TRAIN"))
+            pbar.update()
         pbar.close()
+        if self._time:
+            elapse = time.time() - start
+            print(elapse)
+            return False
 
         # validate
         test_acc, test_acc_top5, test_loss = validate(self.val_loader, self.distiller, epoch)
@@ -170,6 +176,7 @@ class BaseTrainer(object):
             save_checkpoint(
                 student_state, os.path.join(self.log_path, "student_best")
             )
+        return True
 
     def train_iter(self, data, epoch, train_meters):
         train_start_time = time.time()

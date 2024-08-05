@@ -195,7 +195,7 @@ class ResNet(nn.Module):
         x, f2_pre = self.layer2(x)  # 16x16
         f2 = x
         x, f3_pre = self.layer3(x)  # 8x8
-        if self.training:
+        if self.training and x.requires_grad:
             x.register_hook(self.hook)
         f3 = x
 

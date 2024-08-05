@@ -96,33 +96,45 @@ class CAM(Distiller):
             self.fc_v = get_fc(vanilla)
         self.kd_loss_weight = 0.9
         self.temperature = 4
+        self.k = 30
+        self.depth_t = self.fc_t.in_features
+        self.depth_s = self.fc_s.in_features
             
-    def get_loss_cam(self, cam_teacher, cam_student, idx=None, weight=None):
-        if cam_student.shape[-1] > cam_teacher.shape[-1]:
-            cam_teacher = torch.nn.functional.interpolate(cam_teacher, scale_factor=cam_student.shape[-1]/cam_teacher.shape[-1], mode='bilinear', align_corners=False).cuda()
-        elif cam_student.shape[-1] < cam_teacher.shape[-1]:
-            cam_student = torch.nn.functional.interpolate(cam_student, scale_factor=cam_teacher.shape[-1]/cam_student.shape[-1], mode='bilinear', align_corners=False).cuda()
-        loss_cam = (((cam_student/self.T).softmax(dim=0) - (cam_teacher/self.T).softmax(dim=0))**2).sum() * 100
+    def get_loss_cam(self, cam_teacher, cam_student):
+        with torch.no_grad():
+            if cam_student.shape[-1] > cam_teacher.shape[-1]:
+                cam_teacher = torch.nn.functional.interpolate(cam_teacher, scale_factor=cam_student.shape[-1]/cam_teacher.shape[-1], mode='bilinear', align_corners=False).cuda()
+            elif cam_student.shape[-1] < cam_teacher.shape[-1]:
+                cam_teacher = torch.nn.functional.interpolate(cam_teacher, scale_factor=cam_student.shape[-1]/cam_teacher.shape[-1], mode='bilinear', align_corners=False).cuda()
+        # elif cam_student.shape[-1] < cam_teacher.shape[-1]:
+        #     cam_student = torch.nn.functional.interpolate(cam_student, scale_factor=cam_teacher.shape[-1]/cam_student.shape[-1], mode='bilinear', align_corners=False).cuda()
+        loss_cam = (((cam_student/self.T).softmax(dim=0).mean() - (cam_teacher/self.T).softmax(dim=0))**2).sum().mean()
         return loss_cam
+        # return 1
 
     def forward_train(self, image, target, **kwargs):
+        bs = image.shape[0]
         logits_student, feature_student = self.student(image)
         with torch.no_grad():
             logits_teacher, feature_teacher = self.teacher(image)
-        pred_teacher = logits_teacher.softmax(1).max(1)
+        # sz = feature_teacher['feats'][-1].shape[-1]
+        topk_teacher = logits_teacher.topk(self.k)[1].view(bs, self.k, 1)
 
         # losses
         loss_ce = self.ce_loss_weight * F.cross_entropy(logits_student, target)
         num_classes = self.fc_s.weight.shape[0]
-        if self.pool_feature is None:
-            sz = max(2, feature_student["feats"][-1].shape[-1] // 4)
-            self.pool_feature = nn.AdaptiveAvgPool2d([sz, sz])
-            self.pool_feature_4 = nn.AdaptiveAvgPool2d([4, 4])
-            self.pool_feature_1 = nn.AdaptiveAvgPool2d([1, 1])
-            
-        loss_kd = self.kd_loss_weight * kd_loss(
-            logits_student, logits_teacher, self.temperature
-        )
+        # if self.pool_feature is None:
+        #     sz = max(2, feature_student["feats"][-1].shape[-1] // 4)
+        #     self.pool_feature = nn.AdaptiveAvgPool2d([sz, sz])
+        #     self.pool_feature_4 = nn.AdaptiveAvgPool2d([4, 4])
+        #     self.pool_feature_1 = nn.AdaptiveAvgPool2d([1, 1])
+        cam_teacher = self.get_cam(feature_teacher, self.fc_t, num_classes, topk_teacher, bs, self.depth_t)
+        cam_student = self.get_cam(feature_student, self.fc_s, num_classes, topk_teacher, bs, self.depth_s)
+        # cam_teacher = cam_teacher.gather(dim=1, index=topk_teacher)
+        # cam_student = cam_student.gather(dim=1, index=topk_teacher)
+        loss_kd = self.kd_loss_weight * self.get_loss_cam(
+             cam_teacher, cam_student
+             )
         losses_dict = {
             "loss_ce": loss_ce,
             "loss_kd": loss_kd,
@@ -137,7 +149,7 @@ class CAM(Distiller):
             logits_student, feature_student = self.student(image)
             logits_teacher, feature_teacher = self.teacher(image)
             logits_vanilla, feature_vanilla = self.vanilla(image)
-        pred_teacher = logits_teacher.softmax(1).max(1)
+        
 
         # losses
         num_classes = self.fc_s.weight.shape[0]
@@ -155,3 +167,11 @@ class CAM(Distiller):
         save_cam(cam_teacher, cam_student, cam_vanilla, logits_teacher, logits_student, logits_vanilla, target, image, idx, self.t_net)
         return logits_student
     
+    def get_cam(self, feature, fc, num_classes, index, bs, depth):
+        feature = feature["feats"][-1]
+        # import pdb
+        # pdb.set_trace()
+        # linear = fc.weight.view(num_classes, 1, -1, 1, 1)
+        linear = fc.weight.view(1, num_classes, -1).repeat(bs, 1, 1).gather(1, index.repeat(1, 1, depth))
+        cam = (feature.unsqueeze(1) * linear.unsqueeze(-1).unsqueeze(-1)).mean(2).clamp(0)#.permute(1, 0, 2, 3)
+        return cam

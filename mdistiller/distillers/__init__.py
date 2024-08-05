@@ -13,8 +13,8 @@ from .VID import VID
 from .ReviewKD import ReviewKD
 from .DKD import DKD
 from .CAM import CAM
-from .test import tCAM
-from .DKD_CAM import DKD_CAM
+# from .test import tCAM
+# from .DKD_CAM import DKD_CAM
 
 
 distiller_dict = {
@@ -32,7 +32,7 @@ distiller_dict = {
     "VID": VID,
     "REVIEWKD": ReviewKD,
     "DKD": DKD,
-    "DKD_CAM": DKD_CAM,
+    # "DKD_CAM": DKD_CAM,
     "CAM": CAM,
-    "tCAM": tCAM
+    # "tCAM": tCAM
 }

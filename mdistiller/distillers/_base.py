@@ -77,6 +77,6 @@ class Vanilla(nn.Module):
         linear_teacher = self.fc_t.weight.view(num_classes, 1, -1, 1, 1)
         cam_student = ((feature_student) * linear_student).mean(2).clamp(0)
         cam_teacher = ((feature_teacher) * linear_teacher).mean(2).clamp(0)
-        pdb.set_trace()
+        # pdb.set_trace()
         losses_dict = {}
         return logits_student, losses_dict

@@ -6,7 +6,7 @@ import torch.backends.cudnn as cudnn
 
 cudnn.benchmark = True
 import sys
-sys.path.append('.')
+sys.path.append('/home/blenderama/Exp-KD')
 
 from mdistiller.models import cifar_model_dict, imagenet_model_dict
 from mdistiller.distillers import distiller_dict
@@ -15,11 +15,10 @@ from mdistiller.engine.utils import load_checkpoint, log_msg
 from mdistiller.engine.cfg import CFG as cfg
 from mdistiller.engine.cfg import show_cfg
 from mdistiller.engine import trainer_dict
-import pdb
 
 
 torch.manual_seed(3407)
-def main(cfg, resume, opts):
+def main(cfg, resume, opts, _time):
     experiment_name = cfg.EXPERIMENT.NAME
     if experiment_name == "":
         experiment_name = cfg.EXPERIMENT.TAG
@@ -93,7 +92,7 @@ def main(cfg, resume, opts):
 
     # train
     trainer = trainer_dict[cfg.SOLVER.TRAINER](
-        experiment_name, distiller, train_loader, val_loader, cfg
+        experiment_name, distiller, train_loader, val_loader, cfg, _time=_time
     )
     trainer.train(resume=resume)
 
@@ -104,6 +103,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser("training for knowledge distillation.")
     parser.add_argument("--cfg", type=str, default="")
     parser.add_argument("--resume", action="store_true")
+    parser.add_argument("--time", action="store_true")
     parser.add_argument("opts", default=None, nargs=argparse.REMAINDER)
 
     args = parser.parse_args()
@@ -111,4 +111,4 @@ if __name__ == "__main__":
     cfg.merge_from_file(args.cfg)
     cfg.merge_from_list(args.opts)
     cfg.freeze()
-    main(cfg, args.resume, args.opts)
+    main(cfg, args.resume, args.opts, args.time)
