@@ -177,10 +177,19 @@ def validate(val_loader, distiller, epoch=None):
             target = target.cuda(non_blocking=True)
             if epoch is None:
                 output = distiller(image=image)
+                # import pdb
+                # pdb.set_trace()
+                if isinstance(output, list):
+                    if output[0].max() > 0:
+                        output = output[0]
+                    elif output[1].max() > 0:
+                        output = output[1]
+                    else:
+                        output = output[2]
                 loss = criterion(output, target)
             else:
                 output, losses_dict = distiller.module.forward_train(image=image, target=target, epoch=epoch)
-                loss = losses_dict['loss_kd']
+                loss = losses_dict['ce']
             acc1, acc5 = accuracy(output, target, topk=(1, 5))
             batch_size = image.size(0)
             losses.update(loss.cpu().detach().numpy().mean(), batch_size)
@@ -190,7 +199,7 @@ def validate(val_loader, distiller, epoch=None):
             # measure elapsed time
             batch_time.update(time.time() - start_time)
             start_time = time.time()
-            msg = "Top-1:{top1.avg:.3f}| Top-5:{top5.avg:.3f} | loss_kd:{losses.avg:.2f}".format(
+            msg = "Top-1:{top1.avg:.3f}| Top-5:{top5.avg:.3f} | loss_ce:{losses.avg:.2f}".format(
                 top1=top1, top5=top5, losses=losses
             )
             pbar.set_description(log_msg(msg, "EVAL"))

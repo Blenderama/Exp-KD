@@ -50,8 +50,38 @@ class Vanilla(nn.Module):
 
     def forward_train(self, image, target, **kwargs):
         logits_student, _ = self.student(image)
-        loss = F.cross_entropy(logits_student, target)
-        return logits_student, {"ce": loss}
+        if isinstance(logits_student, list):
+            loss = []
+            # in each branch, less than one class > 0.5
+            for br in logits_student:
+                loss.append(br.sigmoid().topk(2)[0][:, 1].mean()) # len(loss)==3
+            # in all branches, at least one class --> 1
+            all_logits = torch.cat(logits_student, 1).sigmoid()
+            loss.append(1 - all_logits.max(1)[0].mean()) # len(loss) == 4
+            # for different classes, inner product --> 0
+            class_diff = (target.unsqueeze(0) == target.unsqueeze(1)).logical_not()
+            loss.append((all_logits @ all_logits.T)[class_diff].mean())
+            # ce loss weighted 0.1
+            ce_loss = []
+            for br in logits_student:
+                loss.append(1 * F.cross_entropy(br, target))
+            # loss.append(min(ce_loss))
+            # loss.append(ce_loss[-1])
+            # assert(len(loss) == 8)
+            # import pdb
+            # pdb.set_trace()
+            loss = sum(loss)
+            logits_student_out = logits_student[2]
+            # if logits_student[0].max() > 0:
+            #     logits_student_out = logits_student[0]
+            # elif logits_student[1].max() > 0:
+            #     logits_student_out = logits_student[1]
+            # else:
+            #     logits_student_out = logits_student[2]
+            return logits_student_out, {"ce": loss}
+        else:
+            loss = F.cross_entropy(logits_student, target)
+            return logits_student, {"ce": loss}
 
     def forward(self, **kwargs):
         if self.training:
