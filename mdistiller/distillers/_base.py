@@ -60,27 +60,37 @@ class Vanilla(nn.Module):
             loss.append(1 - all_logits.max(1)[0].mean()) # len(loss) == 4
             # for different classes, inner product --> 0
             class_diff = (target.unsqueeze(0) == target.unsqueeze(1)).logical_not()
-            loss.append((all_logits @ all_logits.T)[class_diff].mean())
+            loss.append((all_logits @ all_logits.T)[class_diff].mean() * 2)
             # ce loss weighted 0.1
-            ce_loss = []
+            # ce_loss = []
             for br in logits_student:
+                # ce_loss.append(1 * F.cross_entropy(br, target))
                 loss.append(1 * F.cross_entropy(br, target))
+            # import pdb
+            # pdb.set_trace()
+            # all_br = torch.stack(logits_student, 2).max(2)[0]
+            # loss.append(F.cross_entropy(all_br, target))
             # loss.append(min(ce_loss))
             # loss.append(ce_loss[-1])
             # assert(len(loss) == 8)
-            # import pdb
-            # pdb.set_trace()
+            
             loss = sum(loss)
-            logits_student_out = logits_student[2]
-            # if logits_student[0].max() > 0:
-            #     logits_student_out = logits_student[0]
-            # elif logits_student[1].max() > 0:
-            #     logits_student_out = logits_student[1]
-            # else:
-            #     logits_student_out = logits_student[2]
+            # logits_student_out = logits_student[2]
+            # logits_student_out = all_br
+            if logits_student[0].max() > 0:
+                logits_student_out = logits_student[0]
+            elif logits_student[1].max() > 0:
+                logits_student_out = logits_student[1]
+            else:
+                logits_student_out = logits_student[2]
             return logits_student_out, {"ce": loss}
+
+            # loss = F.cross_entropy(logits_student[2], target)
+            # return logits_student[2], {"ce": loss}
         else:
             loss = F.cross_entropy(logits_student, target)
+            # import pdb
+            # pdb.set_trace()
             return logits_student, {"ce": loss}
 
     def forward(self, **kwargs):

@@ -5,7 +5,7 @@ EXPERIMENT:
 DISTILLER:
   TYPE: "NONE"
   TEACHER: "resnet32x4"
-  STUDENT: "hresnet8"
+  STUDENT: "hresnet8x4"
 SOLVER:
   BATCH_SIZE: 64
   EPOCHS: 240

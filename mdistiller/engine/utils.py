@@ -186,6 +186,8 @@ def validate(val_loader, distiller, epoch=None):
                         output = output[1]
                     else:
                         output = output[2]
+                    # output = torch.stack(output, 2).max(2)[0]
+                    # output = output[2]
                 loss = criterion(output, target)
             else:
                 output, losses_dict = distiller.module.forward_train(image=image, target=target, epoch=epoch)

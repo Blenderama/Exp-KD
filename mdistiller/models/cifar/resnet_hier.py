@@ -121,10 +121,10 @@ class ResNet(nn.Module):
         self.layer3 = self._make_layer(block, num_filters[3], n, stride=2)
         self.avgpool1 = nn.AvgPool2d(32)
         self.avgpool2 = nn.AvgPool2d(16)
-        self.avgpool3 = nn.AvgPool2d(8)
+        self.avgpool = nn.AvgPool2d(8)
         self.fc1 = nn.Linear(num_filters[1] * block.expansion, num_classes, bias=True)
         self.fc2 = nn.Linear(num_filters[2] * block.expansion, num_classes, bias=True)
-        self.fc3 = nn.Linear(num_filters[3] * block.expansion, num_classes, bias=True)
+        self.fc = nn.Linear(num_filters[3] * block.expansion, num_classes, bias=True)
         self.stage_channels = num_filters
 
         for m in self.modules():
@@ -196,29 +196,30 @@ class ResNet(nn.Module):
 
         x, f1_pre = self.layer1(x)  # 32x32
         f1 = x
-        x = self.avgpool1(x)
-        avg = x.reshape(x.size(0), -1)
+        x1 = self.avgpool1(x)
+        avg = x1.reshape(x1.size(0), -1)
         out1 = self.fc1(avg)
-        x, f2_pre = self.layer2(f1)  # 16x16
+        x, f2_pre = self.layer2(x)  # 16x16
         f2 = x
-        x = self.avgpool2(x)
-        avg = x.reshape(x.size(0), -1)
+        x2 = self.avgpool2(x)
+        avg = x2.reshape(x2.size(0), -1)
         out2 = self.fc2(avg)
-        x, f3_pre = self.layer3(f2)  # 8x8
+        x, f3_pre = self.layer3(x)  # 8x8
         if self.training and x.requires_grad:
             x.register_hook(self.hook)
         f3 = x
 
-        x = self.avgpool3(x)
+        x = self.avgpool(x)
         avg = x.reshape(x.size(0), -1)
-        out3 = self.fc3(avg)
+        out = self.fc(avg)
 
         feats = {}
         feats["feats"] = [f0, f1, f2, f3]
         feats["preact_feats"] = [f0, f1_pre, f2_pre, f3_pre]
         feats["pooled_feat"] = avg
 
-        return [out1, out2, out3], feats
+        return [out1, out2, out], feats
+        # return out, feats
 
 
 def hresnet8(**kwargs):
@@ -249,7 +250,7 @@ def resnet110(**kwargs):
     return ResNet(110, [16, 16, 32, 64], "basicblock", **kwargs)
 
 
-def resnet8x4(**kwargs):
+def hresnet8x4(**kwargs):
     return ResNet(8, [32, 64, 128, 256], "basicblock", **kwargs)
 
 

@@ -28,7 +28,7 @@ from .mobilenetv2 import mobile_half
 from .mobilenetv1 import MobileNetV1
 from .ShuffleNetv1 import ShuffleV1
 from .ShuffleNetv2 import ShuffleV2
-from .resnet_hier import hresnet8
+from .resnet_hier import hresnet8, hresnet8x4
 
 
 cifar100_model_prefix = os.path.join(
@@ -85,7 +85,7 @@ cifar_model_dict = {
     "resnet32_adapt": (resnet32_adapt, None),
     "resnet44_adapt": (resnet44_adapt, None),
     "resnet8x4_adapt": (resnet8x4_adapt, None),
-    "hresnet8": (hresnet8, None),
+    "hresnet8x4": (hresnet8x4, None),
     "resnet8": (resnet8, None),
     "resnet14": (resnet14, None),
     "resnet20": (resnet20, None),
