@@ -171,7 +171,10 @@ def validate(val_loader, distiller, epoch=None):
     distiller.eval()
     with torch.no_grad():
         start_time = time.time()
+        stat = {}
         for idx, (image, target) in enumerate(val_loader):
+            # if target[0] != 2:
+            #     continue
             image = image.float()
             image = image.cuda(non_blocking=True)
             target = target.cuda(non_blocking=True)
@@ -180,19 +183,25 @@ def validate(val_loader, distiller, epoch=None):
                 # import pdb
                 # pdb.set_trace()
                 if isinstance(output, list):
-                    if output[0].max() > 0:
-                        output = output[0]
-                    elif output[1].max() > 0:
-                        output = output[1]
-                    else:
-                        output = output[2]
-                    # output = torch.stack(output, 2).max(2)[0]
-                    # output = output[2]
+                    # if output[0].max() > 0:
+                    #     output = output[0]
+                    # elif output[1].max() > 0:
+                    #     output = output[1]
+                    # else:
+                    #     output = output[2]
+                    # # output = torch.stack(output, 2).max(2)[0]
+                    output = output[2]
                 loss = criterion(output, target)
             else:
                 output, losses_dict = distiller.module.forward_train(image=image, target=target, epoch=epoch)
                 loss = losses_dict['ce']
             acc1, acc5 = accuracy(output, target, topk=(1, 5))
+            # kk = int(target[0])
+            # if kk in stat.keys():
+            #     stat[kk].append(int(acc1[0]))
+            # else:
+            #     stat[kk] = [int(acc1[0])]
+
             batch_size = image.size(0)
             losses.update(loss.cpu().detach().numpy().mean(), batch_size)
             top1.update(acc1[0], batch_size)
@@ -207,6 +216,7 @@ def validate(val_loader, distiller, epoch=None):
             pbar.set_description(log_msg(msg, "EVAL"))
             pbar.update()
     pbar.close()
+    # pdb.set_trace()
     return top1.avg, top5.avg, losses.avg
 
 def log_msg(msg, mode="INFO"):

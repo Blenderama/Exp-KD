@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from ._base import Distiller
+from ._base import Distiller, get_fc
 import cv2
 import numpy as np
 import imageio
@@ -61,17 +61,6 @@ def save_img(cams, target, image, epoch, folder):
     imageio.imsave(os.path.join('cams', 'viz', 'viz_' + str(epoch) + '_' + str(i) + '_' + folder + '.jpg'), vis)
 
     
-
-def get_fc(model):
-    layers = {k:v for k,v in model.named_modules()}.keys()
-    if 'fc' in layers:
-        return model.fc
-    elif 'linear' in layers:
-        return model.linear
-    elif 'classifier' in layers:
-        return model.classifier
-    else:
-        raise NotImplementedError
         
     
 class CAM(Distiller):
@@ -169,9 +158,6 @@ class CAM(Distiller):
     
     def get_cam(self, feature, fc, num_classes, index, bs, depth):
         feature = feature["feats"][-1]
-        # import pdb
-        # pdb.set_trace()
-        # linear = fc.weight.view(num_classes, 1, -1, 1, 1)
         linear = fc.weight.view(1, num_classes, -1).repeat(bs, 1, 1).gather(1, index.repeat(1, 1, depth))
         cam = (feature.unsqueeze(1) * linear.unsqueeze(-1).unsqueeze(-1)).mean(2).clamp(0)#.permute(1, 0, 2, 3)
         return cam
