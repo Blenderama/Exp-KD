@@ -5,13 +5,13 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Debugpy Old: Current File",
-            "type": "debugpy-old",
+            "name": "Python Debugger: Current File",
+            "type": "debugpy",
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "justMyCode": true,
-            "args": ["--cfg configs/cifar100/vanilla.yaml"]
+            "justMyCode": false,
+            "args": ["--cfg", "configs/cifar100/vanilla_hier.yaml"]
         }
     ]
 }

@@ -66,6 +66,17 @@ class Vanilla(nn.Module):
     def forward_train(self, image, target, **kwargs):
         logits_student, feature_student = self.student(image)
         if isinstance(logits_student, list):
+            logits = torch.stack(logits_student, 2).log_softmax(1)
+            if self.training:
+                granular_weight = (self.student.granular.weight.unsqueeze(0) * 10).softmax(-1)
+            else:
+                # pdb.set_trace()
+                granular_weight = (self.student.granular.weight == self.student.granular.weight.max(1, keepdims=True)[0]).unsqueeze(0).long()
+            logits = granular_weight * logits
+            logits = logits.sum(-1)
+            loss = -logits.gather(1, target.view(-1,1)).mean()
+            return logits, {"ce": loss}
+        elif isinstance(logits_student, None):
             loss = []
             # in each branch, less than one class > 0.5
             for br in logits_student:

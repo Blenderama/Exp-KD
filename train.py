@@ -101,7 +101,7 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser("training for knowledge distillation.")
-    parser.add_argument("--cfg", type=str, default="")
+    parser.add_argument("--cfg", type=str, default="configs/cifar100/vanilla_hier.yaml")
     parser.add_argument("--resume", action="store_true")
     parser.add_argument("--time", action="store_true")
     parser.add_argument("opts", default=None, nargs=argparse.REMAINDER)

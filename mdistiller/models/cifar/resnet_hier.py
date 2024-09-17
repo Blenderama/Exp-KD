@@ -126,6 +126,7 @@ class ResNet(nn.Module):
         self.fc2 = nn.Linear(num_filters[2] * block.expansion, num_classes, bias=True)
         self.fc = nn.Linear(num_filters[3] * block.expansion, num_classes, bias=True)
         self.stage_channels = num_filters
+        self.granular = nn.Linear(3, num_classes)
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
